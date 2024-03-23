@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -10,15 +9,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-)
-
-const (
-	ResponseType = "code"
-	RedirectURI  = "http://localhost:8000/callback"
-	GrantType    = "authorization_code"
-	State        = "29384dz8ag823fhh"
-	Scope        = "user-read-private+user-read-email"
-	ContentType  = "application/x-www-form-urlencoded"
 )
 
 var bearerToken string
@@ -53,7 +43,6 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 
 	secrets := clientId + ":" + clientSecret
 	encodedSecrets := base64.StdEncoding.EncodeToString([]byte(secrets))
-	log.Println("Secrets: %s", encodedSecrets)
 	authorizationHeader := fmt.Sprintf("Basic %s", encodedSecrets)
 	authRedirectReq.Header.Set("Content-Type", ContentType)
 	authRedirectReq.Header.Set("Authorization", authorizationHeader)
@@ -74,8 +63,6 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 func handleUser(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(http.MethodGet, "https://api.spotify.com/v1/me", nil)
 	req.Header.Set("Authorization", bearerToken)
-	log.Printf("\n\n\n\n\nBEARER TOKEN IN HANDLEUSER", bearerToken)
-
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -93,13 +80,4 @@ func main() {
 	log.Println("Server listening on localhost:8000")
 	serverError := http.ListenAndServe(":8000", nil)
 	log.Fatalf("Server killed, error: %s", serverError)
-}
-
-func jsonToMap(jsonStr string) map[string]interface{} {
-	result := make(map[string]interface{})
-	err := json.Unmarshal([]byte(jsonStr), &result)
-	if err != nil {
-		return nil
-	}
-	return result
 }
