@@ -2,23 +2,23 @@ package http
 
 // HTTP request query params
 const (
-	ReqQueryParamCode              = "code"
-	ReqQueryParamState             = "state"
-	ReqQueryParamAuthorizationCode = "authorization_code"
+	CodeReqQueryParam              = "code"
+	StateReqQueryParam             = "state"
+	AuthorizationCodeReqQueryParam = "authorization_code"
 )
 
 // HTTP request body params
 const (
-	ReqBodyParamCode        = "code"
-	ReqBodyParamRedirectURI = "redirect_uri"
-	ReqBodyParamGrantType   = "grant_type"
+	CodeReqBodyParam        = "code"
+	RedirectURIReqBodyParam = "redirect_uri"
+	GrantTypeReqBodyParam   = "grant_type"
 )
 
 // HTTP request headers - values
-const ContentTypeApplicationFormUrlEncoded = "application/x-www-form-urlencoded"
+const ApplicationFormUrlEncodedContentType = "application/x-www-form-urlencoded"
 
 // HTTP request headers
 const (
-	HeaderContentType   = "Content-Type"
-	HeaderAuthorization = "Authorization"
+	ContentTypeHeader   = "Content-Type"
+	AuthorizationHeader = "Authorization"
 )
