@@ -89,6 +89,19 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(b))
 }
 
+func handleUserTracks(w http.ResponseWriter, r *http.Request) {
+	req, err := http.NewRequest(http.MethodGet, GetCurrentUserSavedTracksEndpoint, nil)
+	req.Header.Set(AuthorizationHeader, bearerToken)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("Failed to hit \"tracks\" endpoint")
+	}
+	b, _ := io.ReadAll(resp.Body)
+	tracks := jsonToMap(string(b))
+	fmt.Fprintf(w, "tracks is %s\n", tracks)
+}
+
 func main() {
 	spotifyClientId = os.Getenv(ClientId)
 	spotifyClientSecret = os.Getenv(ClientSecret)
@@ -96,6 +109,7 @@ func main() {
 	http.HandleFunc("/login", handleLogin)
 	http.HandleFunc("/callback", handleRedirect)
 	http.HandleFunc("/", handleUser)
+	http.HandleFunc("/tracks", handleUserTracks)
 
 	log.Printf("Server listening on: %s", Host)
 	serverError := http.ListenAndServe(Host, nil)
