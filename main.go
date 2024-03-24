@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	. "spotify-go/constants/http"
-	. "spotify-go/constants/spotify"
+	. "spotify-go/common/http"
+	. "spotify-go/common/spotify"
 )
 
 const (
@@ -25,7 +25,7 @@ var (
 	bearerToken         string
 )
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
+func handleLogin(w http.ResponseWriter, r *http.Request) {
 	state := "29384dz8ag823fhh" // TODO change state to random 16-char string to prevent CSRF
 	authURL := fmt.Sprintf("%s?client_id=%s&grant_type=%s&response_type=%s&redirect_uri=%s&scope=%s&state=%s",
 		AuthorizeUserEndpoint,
@@ -33,7 +33,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		AuthorizationCodeReqQueryParam,
 		CodeReqQueryParam,
 		RedirectURI,
-		fmt.Sprintf("%s+%s", UserReadPrivateScope, UserEmailReadScope),
+		getScopeString(),
 		state)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
@@ -93,9 +93,9 @@ func main() {
 	spotifyClientId = os.Getenv(ClientId)
 	spotifyClientSecret = os.Getenv(ClientSecret)
 
-	http.HandleFunc("/", handleRoot)
+	http.HandleFunc("/login", handleLogin)
 	http.HandleFunc("/callback", handleRedirect)
-	http.HandleFunc("/me", handleUser)
+	http.HandleFunc("/", handleUser)
 
 	log.Printf("Server listening on: %s", Host)
 	serverError := http.ListenAndServe(Host, nil)

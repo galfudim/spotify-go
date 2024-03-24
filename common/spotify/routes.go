@@ -8,7 +8,13 @@ const (
 	GenerateTokenEndpoint = AccountsEndpoint + "/api/token"
 )
 
+// Resources
+const (
+	CurrentUserEndpoint = v1ApiEndpoint + "/me"
+)
+
 // v1 APIs
 const (
-	GetCurrentUserProfileEndpoint = v1ApiEndpoint + "/me"
+	GetCurrentUserProfileEndpoint     = CurrentUserEndpoint
+	GetCurrentUserSavedTracksEndpoint = CurrentUserEndpoint + "/tracks"
 )
