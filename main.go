@@ -9,9 +9,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	. "spotify-go/common/http"
-	. "spotify-go/common/spotify"
 )
 
 const (
