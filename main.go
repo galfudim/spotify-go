@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -65,7 +66,7 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseBody, _ := io.ReadAll(resp.Body)
-	authToken := jsonToMap(string(responseBody))
+	authToken := jsonToMap(responseBody)
 	bearerToken = "Bearer " + fmt.Sprintf("%v", authToken["access_token"])
 	//log.Printf("Bearer token:\n%s", bearerToken)
 }
@@ -83,8 +84,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUserTracks(w http.ResponseWriter, r *http.Request) {
-	// arr to collect values
-	arr := []interface{}{}
+	var arr []Track
 	endpoint := "https://api.spotify.com/v1/me/tracks?limit=50&offset=0"
 
 	for {
@@ -94,26 +94,22 @@ func handleUserTracks(w http.ResponseWriter, r *http.Request) {
 		resp, _ := client.Do(req)
 
 		b, _ := io.ReadAll(resp.Body)
-		tracks := jsonToMap(string(b))
-		for key, value := range tracks {
-			// TODO ad items to array
-			if key == "items" {
-				values := value.([]interface{}) // arr of tracks with added date and track data
-				for _, track := range values {
-					trackData := track.(map[string]interface{})["track"]
-					song := trackData.(map[string]interface{})
-					fmt.Fprintf(w, "song: %s\n", song["name"])
-					arr = append(arr, song)
-				}
-			} else if key == "next" {
-				if value != nil {
-					endpoint = fmt.Sprintf("%s", value.(string))
-					log.Printf("endpoint: %s", endpoint)
-				} else {
-					log.Printf("%d total items collected\n", len(arr))
-					return
-				}
-			}
+		trackResponse := TrackResponse{}
+		json.Unmarshal(b, &trackResponse)
+
+		log.Printf("%d items in this iteration", len(trackResponse.Items))
+		for _, item := range trackResponse.Items {
+			track := item.Track
+			fmt.Fprintf(w, "song: %s\n", track.Name)
+			arr = append(arr, track)
+		}
+
+		if trackResponse.Next != "" {
+			endpoint = trackResponse.Next
+			log.Printf("endpoint: %s", endpoint)
+		} else {
+			log.Printf("%d total items collected\n", len(arr))
+			return
 		}
 	}
 }
