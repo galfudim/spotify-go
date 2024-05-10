@@ -22,19 +22,51 @@ func jsonToMap(jsonBytes []byte) map[string]interface{} {
 	return result
 }
 
-type TrackResponse struct {
+type CommonResponse struct {
 	HREF     string `json:"href"`
 	Limit    int    `json:"limit"`
 	Next     string `json:"next"`
 	Offset   int    `json:"offset"`
 	Previous string `json:"previous"`
 	Total    int    `json:"total"`
-	Items    []Item `json:"items"`
 }
 
-type Item struct {
+type TrackResponse struct {
+	CommonResponse
+	Items []TrackItem `json:"items"`
+}
+
+type PlaylistResponse struct {
+	CommonResponse
+	Items []PlaylistItem `json:"items"`
+}
+
+type TrackItem struct {
 	AddedAt string `json:"added_at"`
 	Track   Track  `json:"track"`
+}
+
+type PlaylistItem struct {
+	Collaborative bool   `json:"collaborative"`
+	Description   string `json:"description"`
+	ExternalURLs  struct {
+		Spotify string `json:"spotify"`
+	} `json:"external_urls"`
+	HREF       string    `json:"href"`
+	ID         string    `json:"id"`
+	Images     []Image   `json:"images"`
+	Name       string    `json:"name"`
+	Owner      Owner     `json:"owner"`
+	Public     bool      `json:"public"`
+	SnapshotID string    `json:"snapshot_id"`
+	Tracks     TrackMeta `json:"tracks"`
+	Type       string    `json:"type"`
+	URI        string    `json:"uri"`
+}
+
+type TrackMeta struct {
+	HREF  string `json:"href"`
+	Total int    `json:"total"`
 }
 
 type Track struct {
@@ -108,4 +140,15 @@ type Image struct {
 	URL    string `json:"url"`
 	Height int    `json:"height"`
 	Width  int    `json:"width"`
+}
+
+type Owner struct {
+	ExternalURLs struct {
+		Spotify string `json:"spotify"`
+	} `json:"external_urls"`
+	HREF        string `json:"href"`
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	URI         string `json:"uri"`
+	DisplayName string `json:"display_name"`
 }

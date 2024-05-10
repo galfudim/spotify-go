@@ -27,7 +27,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		"authorization_code",
 		"code",
 		"http://localhost:8000/callback",
-		"user-read-private+user-read-email+user-library-read",
+		"user-read-private+user-read-email+user-library-read+playlist-read-private",
 		state)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
@@ -83,8 +83,8 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(b))
 }
 
-func handleUserTracks(w http.ResponseWriter, r *http.Request) {
-	var arr []Track
+func handleLikedSongs(w http.ResponseWriter, _ *http.Request) {
+	var likedSongs []Track
 	endpoint := "https://api.spotify.com/v1/me/tracks?limit=50&offset=0"
 
 	for {
@@ -95,20 +95,57 @@ func handleUserTracks(w http.ResponseWriter, r *http.Request) {
 
 		b, _ := io.ReadAll(resp.Body)
 		trackResponse := TrackResponse{}
-		json.Unmarshal(b, &trackResponse)
+		err := json.Unmarshal(b, &trackResponse)
+		if err != nil {
+			log.Fatal("Method: handleLikedSongs, error: Unable to read json")
+		}
 
 		log.Printf("%d items in this iteration", len(trackResponse.Items))
 		for _, item := range trackResponse.Items {
 			track := item.Track
 			fmt.Fprintf(w, "song: %s\n", track.Name)
-			arr = append(arr, track)
+			likedSongs = append(likedSongs, track)
 		}
 
 		if trackResponse.Next != "" {
 			endpoint = trackResponse.Next
 			log.Printf("endpoint: %s", endpoint)
 		} else {
-			log.Printf("%d total items collected\n", len(arr))
+			log.Printf("%d total liked song count\n", len(likedSongs))
+			return
+		}
+	}
+}
+
+// handlePlaylists first gets all playlist IDs
+func handlePlaylists(w http.ResponseWriter, _ *http.Request) {
+	var playlistRefs []any
+	endpoint := "https://api.spotify.com/v1/me/playlists?limit=50&offset=0"
+
+	for {
+		req, _ := http.NewRequest(http.MethodGet, endpoint, nil)
+		req.Header.Set("Authorization", bearerToken)
+		client := http.Client{}
+		resp, _ := client.Do(req)
+
+		b, _ := io.ReadAll(resp.Body)
+		playlistResponse := PlaylistResponse{}
+		err := json.Unmarshal(b, &playlistResponse)
+		if err != nil {
+			log.Fatal("Method: handlePlaylists, error: Unable to read json")
+		}
+
+		log.Printf("%d items in this iteration", len(playlistResponse.Items))
+		for _, playlist := range playlistResponse.Items {
+			fmt.Fprintf(w, "playlist: %s, song count: %d\n", playlist.Name, playlist.Tracks.Total)
+			playlistRefs = append(playlistRefs, playlist.Tracks.HREF)
+		}
+
+		if playlistResponse.Next != "" {
+			endpoint = playlistResponse.Next
+			log.Printf("endpoint: %s", endpoint)
+		} else {
+			log.Printf("%d total playlist count\n", len(playlistRefs))
 			return
 		}
 	}
@@ -121,7 +158,8 @@ func main() {
 	http.HandleFunc("/login", handleLogin)
 	http.HandleFunc("/callback", handleRedirect)
 	http.HandleFunc("/", handleUser)
-	http.HandleFunc("/tracks", handleUserTracks)
+	http.HandleFunc("/liked-songs", handleLikedSongs)
+	http.HandleFunc("/playlists", handlePlaylists)
 
 	log.Println("Server listening on localhost:8000")
 	serverError := http.ListenAndServe("localhost:8000", nil)
