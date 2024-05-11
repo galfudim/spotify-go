@@ -1,22 +1,15 @@
 package main
 
-import "encoding/json"
-
 const (
-	ClientId                      = "SPOTIFY_CLIENT_ID"
-	ClientSecret                  = "SPOTIFY_CLIENT_SECRET"
-	AuthorizeUserEndpoint         = "https://accounts.spotify.com/authorize"
-	GenerateTokenEndpoint         = "https://accounts.spotify.com/api/token"
-	GetCurrentUserProfileEndpoint = "https://api.spotify.com/v1/me"
+	ClientId     = "SPOTIFY_CLIENT_ID"
+	ClientSecret = "SPOTIFY_CLIENT_SECRET"
 )
 
-func jsonToMap(jsonBytes []byte) map[string]interface{} {
-	result := make(map[string]interface{})
-	err := json.Unmarshal(jsonBytes, &result)
-	if err != nil {
-		return nil
-	}
-	return result
+type AuthResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+	TokenType    string `json:"token_type"`
 }
 
 type CommonResponse struct {

@@ -22,7 +22,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// TODO change state to random 16-char string to prevent CSRF
 	state := "29384dz8ag823fhh"
 	authURL := fmt.Sprintf("%s?client_id=%s&grant_type=%s&response_type=%s&redirect_uri=%s&scope=%s&state=%s",
-		AuthorizeUserEndpoint,
+		"https://accounts.spotify.com/authorize",
 		spotifyClientId,
 		"authorization_code",
 		"code",
@@ -48,7 +48,7 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	authReqBody.Set("code", code)
 	authReqBody.Set("redirect_uri", "http://localhost:8000/callback")
 	authReqBody.Set("grant_type", "authorization_code")
-	authRedirectReq, err := http.NewRequest(http.MethodPost, GenerateTokenEndpoint, strings.NewReader(authReqBody.Encode()))
+	authRedirectReq, err := http.NewRequest(http.MethodPost, "https://accounts.spotify.com/api/token", strings.NewReader(authReqBody.Encode()))
 	if err != nil {
 		log.Fatal("Failed to create authentication request", err)
 	}
@@ -66,13 +66,16 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseBody, _ := io.ReadAll(resp.Body)
-	authToken := jsonToMap(responseBody)
-	bearerToken = "Bearer " + fmt.Sprintf("%v", authToken["access_token"])
-	//log.Printf("Bearer token:\n%s", bearerToken)
+	authResponse := AuthResponse{}
+	err = json.Unmarshal(responseBody, &authResponse)
+	if err != nil {
+		log.Fatal("Method: handleRedirect, error: Unable to read json")
+	}
+	bearerToken = "Bearer " + fmt.Sprintf("%v", authResponse.AccessToken)
 }
 
 func handleUser(_ http.ResponseWriter, _ *http.Request) {
-	req, err := http.NewRequest(http.MethodGet, GetCurrentUserProfileEndpoint, nil)
+	req, err := http.NewRequest(http.MethodGet, "https://api.spotify.com/v1/me", nil)
 	req.Header.Set("Authorization", bearerToken)
 	client := http.Client{}
 	resp, err := client.Do(req)
