@@ -62,7 +62,7 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	client := http.Client{}
 	resp, err := client.Do(authRedirectReq)
 	if err != nil {
-		log.Fatal("Failed to make authentication request", err)
+		log.Fatal("Failed to make authentication request: ", err)
 	}
 
 	responseBody, _ := io.ReadAll(resp.Body)
@@ -71,7 +71,7 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	//log.Printf("Bearer token:\n%s", bearerToken)
 }
 
-func handleUser(w http.ResponseWriter, r *http.Request) {
+func handleUser(_ http.ResponseWriter, _ *http.Request) {
 	req, err := http.NewRequest(http.MethodGet, GetCurrentUserProfileEndpoint, nil)
 	req.Header.Set("Authorization", bearerToken)
 	client := http.Client{}
@@ -84,7 +84,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLikedSongs(w http.ResponseWriter, _ *http.Request) {
-	var likedSongs []Track
+	var savedTracks []Track
 	endpoint := "https://api.spotify.com/v1/me/tracks?limit=50&offset=0"
 
 	for {
@@ -94,7 +94,7 @@ func handleLikedSongs(w http.ResponseWriter, _ *http.Request) {
 		resp, _ := client.Do(req)
 
 		b, _ := io.ReadAll(resp.Body)
-		trackResponse := TrackResponse{}
+		trackResponse := SavedTracksResponse{}
 		err := json.Unmarshal(b, &trackResponse)
 		if err != nil {
 			log.Fatal("Method: handleLikedSongs, error: Unable to read json")
@@ -104,22 +104,21 @@ func handleLikedSongs(w http.ResponseWriter, _ *http.Request) {
 		for _, item := range trackResponse.Items {
 			track := item.Track
 			fmt.Fprintf(w, "song: %s\n", track.Name)
-			likedSongs = append(likedSongs, track)
+			savedTracks = append(savedTracks, track)
 		}
 
 		if trackResponse.Next != "" {
 			endpoint = trackResponse.Next
 			log.Printf("endpoint: %s", endpoint)
 		} else {
-			log.Printf("%d total liked song count\n", len(likedSongs))
+			log.Printf("%d total liked song count\n", len(savedTracks))
 			return
 		}
 	}
 }
 
-// handlePlaylists first gets all playlist IDs
 func handlePlaylists(w http.ResponseWriter, _ *http.Request) {
-	var playlistRefs []any
+	var playlists []PlaylistDTO
 	endpoint := "https://api.spotify.com/v1/me/playlists?limit=50&offset=0"
 
 	for {
@@ -129,7 +128,7 @@ func handlePlaylists(w http.ResponseWriter, _ *http.Request) {
 		resp, _ := client.Do(req)
 
 		b, _ := io.ReadAll(resp.Body)
-		playlistResponse := PlaylistResponse{}
+		playlistResponse := SimplifiedPlaylistsResponse{}
 		err := json.Unmarshal(b, &playlistResponse)
 		if err != nil {
 			log.Fatal("Method: handlePlaylists, error: Unable to read json")
@@ -137,16 +136,58 @@ func handlePlaylists(w http.ResponseWriter, _ *http.Request) {
 
 		log.Printf("%d items in this iteration", len(playlistResponse.Items))
 		for _, playlist := range playlistResponse.Items {
-			fmt.Fprintf(w, "playlist: %s, song count: %d\n", playlist.Name, playlist.Tracks.Total)
-			playlistRefs = append(playlistRefs, playlist.Tracks.HREF)
+			fmt.Fprintf(w, "playlist: %s, song count: %d, url: %s\n", playlist.Name, playlist.Tracks.Total, playlist.Tracks.HREF)
+			playlists = append(playlists, playlist)
 		}
 
 		if playlistResponse.Next != "" {
 			endpoint = playlistResponse.Next
 			log.Printf("endpoint: %s", endpoint)
 		} else {
-			log.Printf("%d total playlist count\n", len(playlistRefs))
+			log.Printf("%d total playlist count\n", len(playlists))
+			getPlaylistTracks(w, playlists)
 			return
+		}
+	}
+}
+
+func getPlaylistTracks(w http.ResponseWriter, playlists []PlaylistDTO) {
+	playlistToTracks := make(map[string][]string)
+
+	for _, playlist := range playlists {
+		playlistUrl := fmt.Sprintf("%s?limit=50&offset=0", playlist.Tracks.HREF)
+		log.Printf("playlist name: %s, url: %s", playlist.Name, playlistUrl)
+
+		for {
+			var tracks []string
+			req, _ := http.NewRequest(http.MethodGet, playlistUrl, nil)
+			req.Header.Set("Authorization", bearerToken)
+			client := http.Client{}
+			resp, _ := client.Do(req)
+
+			b, _ := io.ReadAll(resp.Body)
+			playlistTracksResponse := PlaylistTracksResponse{}
+			err := json.Unmarshal(b, &playlistTracksResponse)
+			if err != nil {
+				log.Fatal("Method: getPlaylistTracks, error: Unable to read json")
+			}
+
+			log.Printf("%d items in this iteration", len(playlistTracksResponse.Items))
+
+			for _, playlistTracks := range playlistTracksResponse.Items {
+				track := playlistTracks.Track
+				fmt.Fprintf(w, "song: %s\n", track.Name)
+				tracks = append(tracks, track.Name)
+			}
+
+			if playlistTracksResponse.Next != "" {
+				playlistUrl = playlistTracksResponse.Next
+				log.Printf("url: %s", playlistUrl)
+			} else {
+				log.Printf("%d total liked song count\n", len(tracks))
+				playlistToTracks[playlist.Name] = tracks
+				break
+			}
 		}
 	}
 }

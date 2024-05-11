@@ -3,11 +3,8 @@ package main
 import "encoding/json"
 
 const (
-	ClientId     = "SPOTIFY_CLIENT_ID"
-	ClientSecret = "SPOTIFY_CLIENT_SECRET"
-)
-
-const (
+	ClientId                      = "SPOTIFY_CLIENT_ID"
+	ClientSecret                  = "SPOTIFY_CLIENT_SECRET"
 	AuthorizeUserEndpoint         = "https://accounts.spotify.com/authorize"
 	GenerateTokenEndpoint         = "https://accounts.spotify.com/api/token"
 	GetCurrentUserProfileEndpoint = "https://api.spotify.com/v1/me"
@@ -31,40 +28,52 @@ type CommonResponse struct {
 	Total    int    `json:"total"`
 }
 
-type TrackResponse struct {
+type SavedTracksResponse struct {
 	CommonResponse
-	Items []TrackItem `json:"items"`
+	Items []TrackDTO `json:"items"`
 }
 
-type PlaylistResponse struct {
+type SimplifiedPlaylistsResponse struct {
 	CommonResponse
-	Items []PlaylistItem `json:"items"`
+	Items []PlaylistDTO `json:"items"`
 }
 
-type TrackItem struct {
+type PlaylistTracksResponse struct {
+	CommonResponse
+	Items []PlaylistTrackItem `json:"items"`
+}
+
+type TrackDTO struct {
 	AddedAt string `json:"added_at"`
 	Track   Track  `json:"track"`
 }
 
-type PlaylistItem struct {
+type PlaylistDTO struct {
 	Collaborative bool   `json:"collaborative"`
 	Description   string `json:"description"`
 	ExternalURLs  struct {
 		Spotify string `json:"spotify"`
 	} `json:"external_urls"`
-	HREF       string    `json:"href"`
-	ID         string    `json:"id"`
-	Images     []Image   `json:"images"`
-	Name       string    `json:"name"`
-	Owner      Owner     `json:"owner"`
-	Public     bool      `json:"public"`
-	SnapshotID string    `json:"snapshot_id"`
-	Tracks     TrackMeta `json:"tracks"`
-	Type       string    `json:"type"`
-	URI        string    `json:"uri"`
+	HREF       string        `json:"href"`
+	ID         string        `json:"id"`
+	Images     []Image       `json:"images"`
+	Name       string        `json:"name"`
+	User       User          `json:"owner"`
+	Public     bool          `json:"public"`
+	SnapshotID string        `json:"snapshot_id"`
+	Tracks     TrackMetadata `json:"tracks"`
+	Type       string        `json:"type"`
+	URI        string        `json:"uri"`
 }
 
-type TrackMeta struct {
+type PlaylistTrackItem struct {
+	AddedAt string `json:"added_at"`
+	User    User   `json:"added_by"`
+	Local   bool   `json:"is_local"`
+	Track   Track  `json:"track"`
+}
+
+type TrackMetadata struct {
 	HREF  string `json:"href"`
 	Total int    `json:"total"`
 }
@@ -81,20 +90,18 @@ type Track struct {
 		EAN  string `json:"ean"`
 		UPC  string `json:"upc"`
 	} `json:"external_ids"`
-	ExternalURLs struct {
-		Spotify string `json:"spotify"`
-	} `json:"external_urls"`
-	HREF        string   `json:"href"`
-	ID          string   `json:"id"`
-	IsPlayable  bool     `json:"is_playable"`
-	LinkedFrom  struct{} `json:"linked_from"`
-	Name        string   `json:"name"`
-	Popularity  int      `json:"popularity"`
-	PreviewURL  string   `json:"preview_url"`
-	TrackNumber int      `json:"track_number"`
-	Type        string   `json:"type"`
-	URI         string   `json:"uri"`
-	IsLocal     bool     `json:"is_local"`
+	ExternalURLs ExternalURLs `json:"external_urls"`
+	HREF         string       `json:"href"`
+	ID           string       `json:"id"`
+	IsPlayable   bool         `json:"is_playable"`
+	LinkedFrom   struct{}     `json:"linked_from"`
+	Name         string       `json:"name"`
+	Popularity   int          `json:"popularity"`
+	PreviewURL   string       `json:"preview_url"`
+	TrackNumber  int          `json:"track_number"`
+	Type         string       `json:"type"`
+	URI          string       `json:"uri"`
+	IsLocal      bool         `json:"is_local"`
 }
 
 type Album struct {
@@ -119,10 +126,8 @@ type Album struct {
 }
 
 type Artist struct {
-	ExternalURLs struct {
-		Spotify string `json:"spotify"`
-	} `json:"external_urls"`
-	Followers struct {
+	ExternalURLs ExternalURLs `json:"external_urls"`
+	Followers    struct {
 		HREF  string `json:"href"`
 		Total int    `json:"total"`
 	} `json:"followers"`
@@ -142,13 +147,19 @@ type Image struct {
 	Width  int    `json:"width"`
 }
 
-type Owner struct {
-	ExternalURLs struct {
-		Spotify string `json:"spotify"`
-	} `json:"external_urls"`
-	HREF        string `json:"href"`
-	ID          string `json:"id"`
-	Type        string `json:"type"`
-	URI         string `json:"uri"`
-	DisplayName string `json:"display_name"`
+type User struct {
+	Name         string       `json:"display_name"`
+	ExternalURLs ExternalURLs `json:"external_urls"`
+	Followers    struct {
+		HREF  string `json:"href"`
+		Total int    `json:"total"`
+	} `json:"followers"`
+	HREF string `json:"href"`
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	URI  string `json:"uri"`
+}
+
+type ExternalURLs struct {
+	Spotify string `json:"spotify"`
 }
