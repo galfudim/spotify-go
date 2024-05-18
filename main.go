@@ -12,23 +12,18 @@ import (
 	"strings"
 )
 
-var (
-	spotifyClientId     string
-	spotifyClientSecret string
-	bearerToken         string
-)
+var spotifyClientId, spotifyClientSecret, youtubeMusicClientId, youtubeMusicClientSecret, bearerToken string
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// TODO change state to random 16-char string to prevent CSRF
+	URL := "https://accounts.spotify.com/authorize"
 	state := "29384dz8ag823fhh"
+	grantType := "authorization_code"
+	responseType := "code"
+	redirectURI := "http://localhost:8000/callback"
+	scope := "user-read-private+user-read-email+user-library-read+playlist-read-private"
 	authURL := fmt.Sprintf("%s?client_id=%s&grant_type=%s&response_type=%s&redirect_uri=%s&scope=%s&state=%s",
-		"https://accounts.spotify.com/authorize",
-		spotifyClientId,
-		"authorization_code",
-		"code",
-		"http://localhost:8000/callback",
-		"user-read-private+user-read-email+user-library-read+playlist-read-private",
-		state)
+		URL, spotifyClientId, grantType, responseType, redirectURI, scope, state)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
@@ -73,7 +68,6 @@ func handleRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 	bearerToken = "Bearer " + fmt.Sprintf("%v", authResponse.AccessToken)
 }
-
 func handleUser(_ http.ResponseWriter, _ *http.Request) {
 	req, err := http.NewRequest(http.MethodGet, "https://api.spotify.com/v1/me", nil)
 	req.Header.Set("Authorization", bearerToken)
@@ -196,12 +190,14 @@ func getPlaylistTracks(w http.ResponseWriter, playlists []PlaylistDTO) {
 }
 
 func main() {
-	spotifyClientId = os.Getenv(ClientId)
-	spotifyClientSecret = os.Getenv(ClientSecret)
+	spotifyClientId = os.Getenv(SpotifyClientId)
+	spotifyClientSecret = os.Getenv(SpotifyClientSecret)
+	youtubeMusicClientId = os.Getenv(YoutubeMusicClientId)
+	youtubeMusicClientSecret = os.Getenv(YoutubeMusicClientSecret)
 
+	http.HandleFunc("/", handleUser)
 	http.HandleFunc("/login", handleLogin)
 	http.HandleFunc("/callback", handleRedirect)
-	http.HandleFunc("/", handleUser)
 	http.HandleFunc("/liked-songs", handleLikedSongs)
 	http.HandleFunc("/playlists", handlePlaylists)
 

@@ -1,8 +1,10 @@
 package main
 
 const (
-	ClientId     = "SPOTIFY_CLIENT_ID"
-	ClientSecret = "SPOTIFY_CLIENT_SECRET"
+	SpotifyClientId          = "SPOTIFY_CLIENT_ID"
+	SpotifyClientSecret      = "SPOTIFY_CLIENT_SECRET"
+	YoutubeMusicClientId     = "YOUTUBE_MUSIC_CLIENT_ID"
+	YoutubeMusicClientSecret = "YOUTUBE_MUSIC_CLIENT_SECRET"
 )
 
 type AuthResponse struct {
